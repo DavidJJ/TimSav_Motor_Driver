@@ -20,7 +20,8 @@ frequency on pin 9.
 
 ## Wiring
 - Potentiometer wiper to A0, ends to 5V and GND
-- Mode input to D2 (use a pull-up or pull-down as needed)
+- Mode input to D2 
+  - 10k ohm pull-down resistor from D2 to GND.
 - PWM output on D9
 
 ## Build/Upload
