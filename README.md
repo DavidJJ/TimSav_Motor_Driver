@@ -22,6 +22,7 @@ frequency on pin 9.
 - Potentiometer wiper to A0, ends to 5V and GND
 - Mode input to D2 
   - 10k ohm pull-down resistor from D2 to GND.
+  - Mode input connects to Coolant Pin on the Arduino CNC shield. 
 - PWM output on D9
 
 ## Build/Upload
