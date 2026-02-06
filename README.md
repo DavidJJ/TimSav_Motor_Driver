@@ -39,18 +39,19 @@ potentiometer.
   - one end to GND
 - Mode input to D2 
   - 10k ohm pull-down resistor from D2 to GND.
-  - Coolant Pin on the CNC shield connects to D2 on Arduino `J1`  
-  - Ground pin on the CNC Shiled connects to GND on Arduino `J1`
+  - Coolant Pin on the CNC shield `CoolEn A3` connects to D2 on Arduino `J1 Pin 2`  
+  - Ground pin on the CNC Shiled `GND` connects to GND on Arduino `J1 Pin 1`
 - ESC output
-  - D9 to ESC signal output `J2`
-  - +5V to middle pin of `J2`
-  - GND to outside pin of `J2`
-- Test Button
+  - D9 to ESC signal output `J2 Pin 3`
+  - +5V to middle pin of `J2 Pin 2`
+  - GND to outside pin of `J2 Pin 1`
+- Test Button (Optional)
   - +5V to pin 1 of the test button
   - D2 to pin 2 of the test button
 
 ## Diagram
 ![Wire-Diagram](assets/TimSav-motor-controller-schematic.png)
+![CNC-Shield](assets/CNC-Shield.png)
 
 ## Build/Upload
 ```sh
