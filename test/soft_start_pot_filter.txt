@@ -1,0 +1,139 @@
+#include <Arduino.h>
+#include <Servo.h>
+
+#define DEBUG 0
+
+namespace {
+    constexpr uint8_t kPwmPin = 9;           // ESC / Servo PWM output
+    constexpr uint8_t kPotPin = A0;          // Potentiometer
+    constexpr uint8_t kModePin = 2;          // ON/OFF input
+
+    constexpr int kMotorOffPulseUs = 1000;   // Motor OFF signal
+    constexpr int kMinCommandPulseUs = 1200; // Minimum running speed, avoids delay 
+    constexpr int kMaxCommandPulseUs = 2000; // Maximum speed
+
+    constexpr int kRampTimeMs = 2000;        // Total ramp-up time in milliseconds
+    constexpr int kLoopDelayMs = 15;         // Main loop delay - REDUCE FOR SMOOTHER RAMPING
+
+    constexpr int kPotDeadband = 3;          // Ignore tiny pot changes
+}
+
+Servo pwmServo;
+
+int currentPulse = kMotorOffPulseUs;
+bool wasMotorOn = false;
+int rampIncrement = 1;
+int lastPotValue = 0;
+int lastPulseSent = 0;
+
+
+// Smooth potentiometer reading
+int readPotSmooth() {
+    long total = 0;
+
+    for (int i = 0; i < 8; i++) {
+        total += analogRead(kPotPin);
+        delayMicroseconds(500);
+    }
+
+    return total / 8;
+}
+
+
+void setup() {
+
+#if DEBUG
+    Serial.begin(9600);
+#endif
+
+    pinMode(kModePin, INPUT);
+    pinMode(LED_BUILTIN, OUTPUT);
+
+    pwmServo.attach(kPwmPin, kMinCommandPulseUs, kMaxCommandPulseUs);
+
+    pwmServo.writeMicroseconds(kMotorOffPulseUs);
+
+#if DEBUG
+    Serial.println("Motor Driver Initialized");
+#endif
+}
+
+
+void loop() {
+
+    const bool motorOn = digitalRead(kModePin) == HIGH;
+    digitalWrite(LED_BUILTIN, motorOn ? HIGH : LOW);
+
+
+    if (motorOn) {
+
+        int potValue = readPotSmooth();
+
+        // Deadband filtering to remove pot noise
+        if (abs(potValue - lastPotValue) > kPotDeadband) {
+            lastPotValue = potValue;
+        }
+
+        int targetPulse = map(lastPotValue,
+                              0,
+                              1023,
+                              kMinCommandPulseUs,
+                              kMaxCommandPulseUs);
+
+        // When motor first turns on
+        if (!wasMotorOn) {
+
+            currentPulse = kMotorOffPulseUs;
+
+            int rampSteps = kRampTimeMs / kLoopDelayMs;
+
+            rampIncrement = (targetPulse - kMotorOffPulseUs) / rampSteps;
+
+            if (rampIncrement < 1)
+                rampIncrement = 1;
+        }
+
+
+        // Soft ramp
+        if (currentPulse < targetPulse) {
+
+            currentPulse += rampIncrement;
+
+            if (currentPulse > targetPulse)
+                currentPulse = targetPulse;
+        }
+        else {
+            currentPulse = targetPulse;
+        }
+
+
+#if DEBUG
+        Serial.print("Pulse: ");
+        Serial.println(currentPulse);
+#endif
+
+    }
+    else {
+
+        // Hard stop
+        currentPulse = kMotorOffPulseUs;
+
+#if DEBUG
+        Serial.println("Motor OFF");
+#endif
+    }
+
+
+    // Only update PWM if value changed
+    if (currentPulse != lastPulseSent) {
+
+        pwmServo.writeMicroseconds(currentPulse);
+
+        lastPulseSent = currentPulse;
+    }
+
+
+    wasMotorOn = motorOn;
+
+    delay(kLoopDelayMs);
+}
